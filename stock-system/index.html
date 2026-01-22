@@ -1,0 +1,863 @@
+<!doctype html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem Stok Aiskrim CREMA</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Supabase (DB + Realtime) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- Export Excel -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<!-- Export PDF -->
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.4/dist/jspdf.plugin.autotable.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+body{font-family:Poppins,sans-serif}
+.card{box-shadow:0 10px 35px rgba(0,0,0,.08)}
+.low{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.6}}
+</style>
+</head>
+
+<body class="bg-gray-50">
+
+<!-- ================= HEADER ================= -->
+<header class="bg-white sticky top-0 z-40 border-b">
+<div class="max-w-7xl mx-auto px-4 py-2 flex justify-between items-center gap-3">
+
+<div class="flex items-center gap-3">
+<img src="./images/logo-crema.png" alt="CREMA" class="w-9 h-9 object-contain" onerror="this.style.display='none'">
+<div>
+<div class="text-sm font-semibold">Sistem Stok Aiskrim</div>
+<div class="text-[11px] text-gray-500">CREMA</div>
+</div>
+</div>
+
+<div class="flex items-center gap-2 text-xs relative">
+
+<button onclick="toggleQueue()" class="px-3 py-1 rounded-full bg-gray-100 flex items-center gap-1">
+🧾 Daftar Jualan
+<span id="queueBadge" class="hidden bg-red-600 text-white px-2 rounded-full text-[10px]">0</span>
+</button>
+
+<div id="queuePanel" class="hidden absolute right-0 top-10 w-[360px] bg-white rounded-2xl card border z-50">
+<div class="p-3 border-b flex justify-between">
+<div>
+<div class="font-semibold">Pesanan Masuk</div>
+<div id="queueSub" class="text-[11px] text-gray-500">Tiada pesanan</div>
+</div>
+<button onclick="clearQueue()" class="text-xs bg-gray-100 px-2 rounded">Kosong</button>
+</div>
+<div id="queueList" class="max-h-[420px] overflow-auto divide-y"></div>
+</div>
+
+<input id="username" placeholder="Nama" class="px-2 py-1 border rounded-full w-24">
+<select id="role" onchange="roleChange()" class="px-2 py-1 border rounded-full">
+<option value="user">User</option>
+<option value="admin">Admin</option>
+</select>
+<input id="adminPw" type="password" placeholder="PW" class="px-2 py-1 border rounded-full w-20 hidden">
+<button onclick="login()" class="px-3 py-1 rounded-full bg-purple-600 text-white">OK</button>
+</div>
+</div>
+</header>
+
+<!-- ================= MAIN ================= -->
+<main class="max-w-7xl mx-auto p-4 space-y-6">
+
+<h2 class="text-2xl font-bold">📦 Stok Aiskrim</h2>
+
+<div id="warning" class="hidden bg-orange-50 p-4 rounded-xl card"></div>
+
+<div id="stockGrid" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4"></div>
+
+<!-- ===== ADMIN: STOK MASUK ===== -->
+<div id="adminStockIn" class="hidden bg-white p-5 rounded-2xl card">
+  <div class="flex items-center justify-between gap-3">
+    <div>
+      <h3 class="font-bold">📥 Stok Masuk (Admin)</h3>
+      <p class="text-xs text-gray-500 mt-1">Tambah stok akan direkod sebagai transaksi (realtime untuk semua staff)</p>
+    </div>
+    <div class="text-xs text-gray-500">Ambang rendah: <span class="font-semibold" id="lowThresholdLabel">5</span></div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
+    <select id="stockInProduct" class="border p-3 rounded-xl"></select>
+    <input id="stockInQty" type="number" min="1" value="1" class="border p-3 rounded-xl" />
+    <input id="stockInNote" placeholder="Nota (optional)" class="border p-3 rounded-xl" />
+  </div>
+
+  <div class="mt-4 text-right">
+    <button onclick="submitStockIn()" class="bg-green-600 text-white px-6 py-3 rounded-xl font-semibold">Tambah Stok</button>
+  </div>
+  <p id="stockInMsg" class="text-sm mt-3 hidden"></p>
+</div>
+
+<!-- ===== DASHBOARD BULANAN + EXPORT ===== -->
+<div class="bg-white p-5 rounded-2xl card">
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+    <div>
+      <h3 class="font-bold">📊 Rumusan Bulanan (Jualan & Stok Masuk)</h3>
+      <p class="text-xs text-gray-500 mt-1">Pilih bulan & tahun untuk ringkasan mengikut perisa</p>
+    </div>
+    <div class="flex flex-wrap gap-2 items-center">
+      <select id="reportMonth" class="border px-3 py-2 rounded-xl"></select>
+      <select id="reportYear" class="border px-3 py-2 rounded-xl"></select>
+      <button onclick="loadMonthlySummary()" class="bg-gray-100 hover:bg-gray-200 px-4 py-2 rounded-xl text-sm font-semibold">Papar</button>
+      <button onclick="exportMonthlyExcel()" class="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-xl text-sm font-semibold">Export Excel</button>
+      <button onclick="exportMonthlyPDF()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-xl text-sm font-semibold">Export PDF</button>
+    </div>
+  </div>
+
+  <div class="mt-4 overflow-auto">
+    <table class="min-w-full text-sm">
+      <thead>
+        <tr class="text-left border-b">
+          <th class="py-2 pr-4">Perisa</th>
+          <th class="py-2 pr-4">Stok Masuk</th>
+          <th class="py-2 pr-4">Jualan (Keluar)</th>
+          <th class="py-2 pr-4">Net</th>
+        </tr>
+      </thead>
+      <tbody id="monthlyTable"></tbody>
+    </table>
+  </div>
+
+  <div class="mt-3 text-xs text-gray-500" id="monthlyMeta"></div>
+</div>
+
+<hr>
+
+<!-- ===== PESANAN MASUK ===== -->
+<div class="bg-white p-5 rounded-2xl card">
+<h3 class="font-bold mb-3">🧾 Pesanan Masuk</h3>
+
+<div class="grid md:grid-cols-3 gap-3 mb-3">
+<input id="cust" placeholder="Pelanggan" class="border p-3 rounded-xl">
+<input id="note" placeholder="Nota" class="border p-3 rounded-xl">
+<div class="bg-gray-50 p-3 rounded-xl flex justify-between">
+<div>
+<div class="text-xs">Order ID</div>
+<div id="oid" class="font-bold">-</div>
+</div>
+<div>
+<div class="text-xs">Total</div>
+<div id="ototal" class="font-bold text-xl">0</div>
+</div>
+</div>
+</div>
+
+<div id="builder" class="space-y-2"></div>
+
+<button onclick="addRow()" class="text-xs bg-gray-100 px-3 py-1 rounded">➕ Tambah</button>
+
+<div class="mt-4 text-right">
+<button onclick="submitOrder()" class="bg-purple-600 text-white px-6 py-3 rounded-xl">Masuk Queue</button>
+</div>
+</div>
+
+</main>
+
+
+// ====== Sound Notification ======
+let soundEnabled = true;
+function playDing(){
+  if(!soundEnabled) return;
+  try{
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if(!AudioCtx) return;
+    const ctx = playDing._ctx || (playDing._ctx = new AudioCtx());
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = 'sine';
+    o.frequency.value = 880;
+    g.gain.value = 0.0001;
+    o.connect(g); g.connect(ctx.destination);
+    const t = ctx.currentTime;
+    g.gain.exponentialRampToValueAtTime(0.25, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.22);
+    o.start(t);
+    o.stop(t + 0.25);
+  }catch(e){}
+}
+<script>
+/* ================= CONFIG =================
+   1) BUAT PROJECT SUPABASE
+   2) Buat table:
+      - orders: id (text PK), order_id (text), customer (text), note (text), items (jsonb), total_units (int), status (text), source (text), created_by (text), created_at (timestamptz)
+      - transactions: id (bigint identity PK), type (text 'in'/'out'), product_id (text), product_name (text), qty (int), note (text), created_by (text), created_at (timestamptz)
+   3) Isi SUPABASE_URL & SUPABASE_ANON_KEY di bawah.
+=========================================== */
+const SUPABASE_URL = "PASTE_YOUR_SUPABASE_URL_HERE";
+const SUPABASE_ANON_KEY = "PASTE_YOUR_SUPABASE_ANON_KEY_HERE";
+const sb = (SUPABASE_URL.includes("PASTE_")) ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Low stock threshold
+const LOW_STOCK_THRESHOLD = 5;
+
+// ===== PRODUCTS (18) =====
+const PRODUCTS=[
+  {id:'durian',name:'Durian',img:'./images/durian.png'},
+  {id:'durian-cheese',name:'Durian Cheese',img:'./images/durian-cheese.png'},
+  {id:'jagung-original',name:'Jagung Original',img:'./images/jagung-original.png'},
+  {id:'jagung-coklat',name:'Jagung Coklat',img:'./images/jagung-coklat.png'},
+  {id:'jagung-cheese',name:'Jagung Cheese',img:'./images/jagung-cheese.png'},
+  {id:'bandung-original',name:'Bandung Original',img:'./images/Bandung-original.png'},
+  {id:'bandung-coklat',name:'Bandung Coklat',img:'./images/Bandung-coklat.png'},
+  {id:'blueberry',name:'Blueberry',img:'./images/blueberry.png'},
+  {id:'choki-choki',name:'Choki Choki',img:'./images/choki-choki.png'},
+  {id:'double-coklat',name:'Double Coklat',img:'./images/double-coklat.png'},
+  {id:'coklat-cheese',name:'Coklat Cheese',img:'./images/coklat-cheese.png'},
+  {id:'matcha-coklat',name:'Matcha Coklat',img:'./images/matcha-coklat.png'},
+  {id:'matcha-cheese',name:'Matcha Cheese',img:'./images/matcha-cheese.png'},
+  {id:'keladi-coklat',name:'Keladi Coklat',img:'./images/keladi-coklat.png'},
+  {id:'keladi-cheese',name:'Keladi Cheese',img:'./images/keladi-cheese.png'},
+  {id:'oreo',name:'Oreo',img:'./images/oreo.png'},
+  {id:'strawberi',name:'Strawberi',img:'./images/strawberi.png'},
+  {id:'tutti',name:'Tutti Fruity',img:'./images/tutti.png'}
+];
+
+// ===== STATE =====
+let stock = {};               // computed from transactions
+let queue = [];               // orders
+let builder = [];             // order builder rows
+let user = null;
+let role = 'user';
+let queueOpen = false;
+
+// ===== UTIL =====
+function productName(id){ return (PRODUCTS.find(p=>p.id===id)?.name) || id; }
+
+function genID(){
+  const d=new Date();
+  const yy=String(d.getFullYear()).slice(-2);
+  const mm=String(d.getMonth()+1).padStart(2,'0');
+  const dd=String(d.getDate()).padStart(2,'0');
+  const rnd=Math.random().toString(16).slice(2,6).toUpperCase();
+  return `CRMA-${yy}${mm}${dd}-${rnd}`;
+}
+
+function showMsg(elId, msg, ok=true){
+  const el=document.getElementById(elId);
+  if(!el) return;
+  el.textContent=msg;
+  el.className = `text-sm mt-3 ${ok?'text-green-700':'text-red-600'}`;
+  el.classList.remove('hidden');
+  setTimeout(()=>el.classList.add('hidden'), 2500);
+}
+
+// ===== AUTH =====
+function roleChange(){
+  const roleSel=document.getElementById('role');
+  const pw=document.getElementById('adminPw');
+  pw.classList.toggle('hidden', roleSel.value!=='admin');
+}
+function login(){
+  const u=document.getElementById('username').value.trim();
+  const r=document.getElementById('role').value;
+  const pw=document.getElementById('adminPw').value;
+
+  if(!u){ alert('Sila isi nama'); return; }
+  if(r==='admin' && pw!=='admin123'){ alert('PW salah'); return; }
+
+  user=u; role=r;
+  alert(`Login: ${user} (${role})`);
+
+  // show admin stock-in panel
+  document.getElementById('adminStockIn').classList.toggle('hidden', role!=='admin');
+
+  // refresh data
+  initRealtimeAndLoad();
+}
+
+// ===== STOCK COMPUTE (from transactions) =====
+function computeStockFromTransactions(transactions){
+  const s={};
+  PRODUCTS.forEach(p=>s[p.id]=0);
+  for(const t of transactions){
+    const pid=t.product_id;
+    if(!(pid in s)) s[pid]=0;
+    if(t.type==='in') s[pid]+=Number(t.qty||0);
+    if(t.type==='out') s[pid]-=Number(t.qty||0);
+  }
+  return s;
+}
+
+// ===== UI: STOCK =====
+function renderStock(){
+  const g=document.getElementById('stockGrid'); g.innerHTML='';
+  const warn=document.getElementById('warning');
+
+  const lowList=[];
+  const outList=[];
+  PRODUCTS.forEach(p=>{
+    const q=Number(stock[p.id]||0);
+    if(q<=0) outList.push(p.name);
+    else if(q<=LOW_STOCK_THRESHOLD) lowList.push(`${p.name} (${q})`);
+
+    g.innerHTML += `
+      <div class="bg-white p-3 rounded-xl card text-center ${q>0 && q<=LOW_STOCK_THRESHOLD?'low':''} ${q<=0?'opacity-70':''}">
+        <img src="${p.img||''}" class="w-16 h-16 mx-auto object-contain" onerror="this.style.display='none'">
+        <div class="font-semibold text-sm">${p.name}</div>
+        <div class="text-2xl font-bold ${q<=0?'text-red-500':q<=LOW_STOCK_THRESHOLD?'text-orange-500':''}">${q}</div>
+        <div class="text-[11px] ${q<=0?'text-red-600':q<=LOW_STOCK_THRESHOLD?'text-orange-600':'text-gray-500'}">
+          ${q<=0?'Habis':q<=LOW_STOCK_THRESHOLD?'Stok Rendah':'unit'}
+        </div>
+      </div>`;
+  });
+
+  const parts=[];
+  if(outList.length) parts.push(`❌ Habis: ${outList.join(', ')}`);
+  if(lowList.length) parts.push(`⚠️ Rendah (≤${LOW_STOCK_THRESHOLD}): ${lowList.join(', ')}`);
+
+  if(parts.length){
+    warn.classList.remove('hidden');
+    warn.innerHTML = parts.join('<br>');
+  } else {
+    warn.classList.add('hidden');
+  }
+
+  // threshold label in admin panel
+  const lowLbl=document.getElementById('lowThresholdLabel');
+  if(lowLbl) lowLbl.textContent=String(LOW_STOCK_THRESHOLD);
+}
+
+// ===== ORDER BUILDER (dropdown + qty) =====
+function addRow(){
+  builder.push({pid:PRODUCTS[0].id, qty:1});
+  renderBuilder();
+}
+function renderBuilder(){
+  const b=document.getElementById('builder'); b.innerHTML='';
+  let total=0;
+
+  builder.forEach((r,i)=>{
+    total += Number(r.qty||0);
+    const opts = PRODUCTS.map(p=>`<option value="${p.id}" ${p.id===r.pid?'selected':''}>${p.name}</option>`).join('');
+    b.innerHTML += `
+      <div class="flex gap-2">
+        <select onchange="builder[${i}].pid=this.value" class="border p-2 rounded flex-1">${opts}</select>
+        <input type="number" min="1" value="${r.qty}" onchange="builder[${i}].qty=+this.value;renderBuilder()" class="border p-2 rounded w-20">
+        <button onclick="builder.splice(${i},1); if(builder.length===0)addRow(); else renderBuilder();" class="px-3 bg-gray-100 rounded">✕</button>
+      </div>`;
+  });
+
+  document.getElementById('oid').textContent = genID();
+  document.getElementById('ototal').textContent = String(total);
+}
+
+// ===== QUEUE UI =====
+function toggleQueue(){
+  const p=document.getElementById('queuePanel');
+  queueOpen = !queueOpen;
+  p.classList.toggle('hidden', !queueOpen);
+  renderQueue();
+}
+function clearQueue(){
+  // only clears locally (DB orders remain). We'll mark as removed by deleting all "pending" created_by=user if needed.
+  if(!confirm('Kosongkan queue di paparan ini? (order dalam DB masih kekal)')) return;
+  queue=[]; renderQueue();
+}
+function updateQueueBadge(){
+  const badge=document.getElementById('queueBadge');
+  const pending=queue.filter(o=>o.status==='pending').length;
+  badge.textContent=String(pending);
+  badge.classList.toggle('hidden', pending===0);
+
+  const sub=document.getElementById('queueSub');
+  if(sub) sub.textContent = pending===0 ? 'Tiada pesanan' : `${pending} pesanan menunggu`;
+}
+
+function renderQueue(){
+  const l=document.getElementById('queueList'); l.innerHTML='';
+  // newest first
+  const sorted=[...queue].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
+
+  if(sorted.length===0){
+    l.innerHTML = `<div class="p-6 text-center text-sm text-gray-500">Tiada pesanan dalam queue</div>`;
+    updateQueueBadge();
+    return;
+  }
+
+  sorted.forEach(o=>{
+    const itemsText=(o.items||[]).map(i=>`${i.name} x${i.qty}`).join(', ');
+    l.innerHTML += `
+      <div class="p-3">
+        <div class="flex items-center justify-between gap-2">
+          <div class="font-bold text-sm">${o.order_id||o.id}</div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full ${o.status==='pending'?'bg-amber-100 text-amber-800':'bg-green-100 text-green-800'}">
+            ${o.status==='pending'?'Menunggu':'Selesai'}
+          </span>
+        </div>
+        <div class="text-xs text-gray-600 mt-1">${o.customer?`👤 ${o.customer}`:''}</div>
+        <div class="text-xs mt-1">${itemsText}</div>
+        <div class="text-xs text-gray-500 mt-1">Total: <span class="font-semibold">${o.total_units||0}</span></div>
+        <div class="flex gap-2 mt-2">
+          <button ${o.status!=='pending'?'disabled':''} onclick="completeOrder('${o.id}')"
+            class="text-xs px-3 py-1 rounded ${o.status==='pending'?'bg-green-600 text-white':'bg-gray-100 text-gray-400'}">
+            ✅ Selesai & Tolak Stok
+          </button>
+          <button onclick="deleteOrder('${o.id}')" class="text-xs px-3 py-1 rounded bg-gray-100">🗑 Buang</button>
+        </div>
+      </div>`;
+  });
+
+  updateQueueBadge();
+}
+
+// ===== DB: LOAD & REALTIME =====
+let realtimeReady=false;
+
+async function loadAll(){
+  // 1) load transactions for stock compute
+  let transactions=[];
+  if(sb){
+    const {data, error} = await sb.from('transactions').select('*').order('created_at', {ascending:true});
+    if(error){ console.error(error); }
+    if(Array.isArray(data)) transactions=data;
+  } else {
+    // fallback (demo mode): start with 20 each
+    transactions = PRODUCTS.map(p=>({type:'in', product_id:p.id, product_name:p.name, qty:20, created_at:new Date().toISOString()}));
+  }
+  stock = computeStockFromTransactions(transactions);
+  renderStock();
+
+  // 2) load orders
+  if(sb){
+    const {data, error} = await sb.from('orders').select('*').order('created_at', {ascending:false}).limit(200);
+    if(!error && Array.isArray(data)) queue = data;
+  } else {
+    queue = [];
+  }
+  renderQueue();
+
+  // 3) fill selects
+  fillSelects();
+
+  // 4) admin product select
+  fillAdminStockInSelect();
+
+  // 5) monthly summary default
+  loadMonthlySummary();
+}
+
+function fillSelects(){
+  // month/year
+  const mSel=document.getElementById('reportMonth');
+  const ySel=document.getElementById('reportYear');
+  if(mSel && mSel.options.length===0){
+    const months=['Jan','Feb','Mac','Apr','Mei','Jun','Jul','Ogos','Sep','Okt','Nov','Dis'];
+    months.forEach((name,idx)=>{
+      const opt=document.createElement('option');
+      opt.value=String(idx+1);
+      opt.textContent=`${idx+1} - ${name}`;
+      mSel.appendChild(opt);
+    });
+    mSel.value=String(new Date().getMonth()+1);
+  }
+  if(ySel && ySel.options.length===0){
+    const y=new Date().getFullYear();
+    for(let i=y-3;i<=y+1;i++){
+      const opt=document.createElement('option');
+      opt.value=String(i);
+      opt.textContent=String(i);
+      ySel.appendChild(opt);
+    }
+    ySel.value=String(y);
+  }
+}
+
+function fillAdminStockInSelect(){
+  const sel=document.getElementById('stockInProduct');
+  if(!sel) return;
+  sel.innerHTML='';
+  PRODUCTS.forEach(p=>{
+    const opt=document.createElement('option');
+    opt.value=p.id;
+    opt.textContent=p.name;
+    sel.appendChild(opt);
+  });
+}
+
+async function initRealtimeAndLoad(){
+  await loadAll();
+
+  if(!sb || realtimeReady) return;
+  realtimeReady=true;
+
+  // subscribe orders
+  sb.channel('orders-ch')
+    .on('postgres_changes', {event:'*', schema:'public', table:'orders'}, (payload)=>{
+      // reload orders light
+      reloadOrders();
+    })
+    .subscribe();
+
+  // subscribe transactions
+  sb.channel('transactions-ch')
+    .on('postgres_changes', {event:'*', schema:'public', table:'transactions'}, (payload)=>{
+      // reload everything (stock depends on tx)
+      reloadTransactionsAndStock();
+      // monthly summary may change
+      loadMonthlySummary();
+    })
+    .subscribe();
+}
+
+async function reloadOrders(){
+  const {data, error} = await sb.from('orders').select('*').order('created_at', {ascending:false}).limit(200);
+  if(!error && Array.isArray(data)){
+    queue=data;
+    if(queueOpen) renderQueue(); else updateQueueBadge();
+  }
+}
+
+async function reloadTransactionsAndStock(){
+  const {data, error} = await sb.from('transactions').select('*').order('created_at', {ascending:true});
+  if(!error && Array.isArray(data)){
+    stock = computeStockFromTransactions(data);
+    renderStock();
+  }
+}
+
+// ===== DB: CREATE TRANSACTION =====
+async function createTransaction(type, productId, qty, note=''){
+  const row = {
+    type,
+    product_id: productId,
+    product_name: productName(productId),
+    qty: Number(qty),
+    note: note || '',
+    created_by: user || '',
+    created_at: new Date().toISOString()
+  };
+
+  if(sb){
+    const {error} = await sb.from('transactions').insert(row);
+    return !error;
+  }
+
+  // fallback demo mode: apply to local stock
+  if(type==='in') stock[productId]=(stock[productId]||0)+Number(qty);
+  if(type==='out') stock[productId]=(stock[productId]||0)-Number(qty);
+  renderStock();
+  return true;
+}
+
+// ===== ADMIN: STOCK IN =====
+async function submitStockIn(){
+  if(!user){ alert('Login dulu'); return; }
+  if(role!=='admin'){ alert('Admin sahaja'); return; }
+
+  const pid=document.getElementById('stockInProduct').value;
+  const qty=Number(document.getElementById('stockInQty').value||0);
+  const note=document.getElementById('stockInNote').value||'';
+
+  if(qty<=0){ showMsg('stockInMsg','Qty tidak sah', false); return; }
+
+  const ok = await createTransaction('in', pid, qty, note || 'Stok masuk');
+  showMsg('stockInMsg', ok ? 'Stok berjaya ditambah' : 'Gagal tambah stok', ok);
+  if(ok){
+    document.getElementById('stockInQty').value = 1;
+    document.getElementById('stockInNote').value = '';
+    // realtime subscription will refresh, but ensure local refresh too
+    if(!sb) renderStock();
+  }
+}
+
+// ===== ORDERS: CREATE/COMPLETE/DELETE =====
+async function submitOrder(){
+  if(!user){ alert('Login dulu'); return; }
+
+  const cust=document.getElementById('cust').value.trim();
+  const note=document.getElementById('note').value.trim();
+
+  const items = builder.map(r=>{
+    const p=PRODUCTS.find(x=>x.id===r.pid);
+    return {product_id:r.pid, name:p?.name||r.pid, qty:Number(r.qty||0)};
+  }).filter(x=>x.qty>0);
+
+  if(items.length===0){ alert('Sila tambah item'); return; }
+
+  const total = items.reduce((s,i)=>s+Number(i.qty||0),0);
+  const order = {
+    id: `ord_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    order_id: genID(),
+    customer: cust,
+    note: note,
+    items: items,
+    total_units: total,
+    status: 'pending',
+    source: 'Manual',
+    created_by: user,
+    created_at: new Date().toISOString()
+  };
+
+  if(sb){
+    const {error} = await sb.from('orders').insert(order);
+    if(error){ console.error(error); alert('Gagal simpan order'); return; }
+  } else {
+    queue.unshift(order);
+  }
+
+  // reset form
+  document.getElementById('cust').value='';
+  document.getElementById('note').value='';
+  builder=[]; addRow();
+
+  renderQueue();
+}
+
+async function completeOrder(orderId){
+  const o = queue.find(x=>x.id===orderId);
+  if(!o || o.status!=='pending') return;
+
+  // validate stock
+  for(const it of (o.items||[])){
+    const available = Number(stock[it.product_id]||0);
+    if(Number(it.qty) > available){
+      alert(`Stok tidak cukup untuk ${it.name}. Baki: ${available}, diminta: ${it.qty}`);
+      return;
+    }
+  }
+
+  // create OUT transactions
+  for(const it of (o.items||[])){
+    const ok = await createTransaction('out', it.product_id, it.qty, `Order ${o.order_id}${o.customer?` • ${o.customer}`:''}${o.note?` • ${o.note}`:''}`.trim());
+    if(!ok){ alert('Gagal tolak stok'); return; }
+  }
+
+  // mark order done
+  if(sb){
+    const {error} = await sb.from('orders').update({status:'done'}).eq('id', orderId);
+    if(error){ console.error(error); }
+  } else {
+    o.status='done';
+    // remove from local queue view for neatness
+    queue = queue.filter(x=>x.id!==orderId);
+  }
+
+  renderStock();
+  renderQueue();
+  loadMonthlySummary();
+}
+
+async function deleteOrder(orderId){
+  if(!confirm('Buang pesanan ini?')) return;
+  if(sb){
+    const {error} = await sb.from('orders').delete().eq('id', orderId);
+    if(error){ console.error(error); alert('Gagal buang'); return; }
+  } else {
+    queue = queue.filter(x=>x.id!==orderId);
+  }
+  renderQueue();
+}
+
+// ===== CHECKOUT INTEGRATION =====
+// 1) postMessage:
+// window.postMessage({ type:'CREMA_CHECKOUT_ORDER', payload:{ order_id, customer, note, items:[{product_id|name, qty}] } }, '*')
+window.addEventListener('message', async (e)=>{
+  const d = e.data;
+  if(!d) return;
+  // Support envelope {type:'CREMA_CHECKOUT_ORDER', payload:{...}} OR raw payload
+  if(d.type && d.type!=='CREMA_CHECKOUT_ORDER') return;
+  const payload = d.type==='CREMA_CHECKOUT_ORDER' ? d.payload : d;
+  if(!payload) return;
+  playDing();
+  await receiveExternalOrder(payload, 'Checkout');
+});
+
+// 2) localStorage bridge (checkout sets `crema_new_order`)
+setInterval(async ()=>{
+  try{
+    const raw=localStorage.getItem('crema_new_order');
+    if(!raw) return;
+    localStorage.removeItem('crema_new_order');
+    const parsed=JSON.parse(raw);
+    const payload = parsed && parsed.type==='CREMA_CHECKOUT_ORDER' ? parsed.payload : parsed;
+    if(!payload) return;
+    playDing();
+    await receiveExternalOrder(payload, 'Checkout');
+  }catch(err){}
+}, 1200);
+
+function normalizeExternalItems(items){
+  const out=[];
+  if(!Array.isArray(items)) return out;
+  for(const it of items){
+    const qty=Math.max(1, Number(it?.qty)||1);
+    let p=null;
+    if(it?.product_id) p=PRODUCTS.find(x=>x.id===it.product_id);
+    if(!p && it?.name){
+      const nm=String(it.name).trim().toLowerCase();
+      p=PRODUCTS.find(x=>x.name.toLowerCase()===nm);
+    }
+    if(!p) continue;
+    out.push({product_id:p.id, name:p.name, qty});
+  }
+  return out;
+}
+
+async function receiveExternalOrder(payload, source='Checkout'){
+  if(!payload) return;
+  const items=normalizeExternalItems(payload.items||[]);
+  if(items.length===0) return;
+
+  const total=items.reduce((s,i)=>s+Number(i.qty||0),0);
+
+  const order = {
+    id: payload.id || `ord_${Date.now()}_${Math.random().toString(16).slice(2)}`,
+    order_id: payload.order_id || genID(),
+    customer: payload.customer || '',
+    note: payload.note || '',
+    items: items,
+    total_units: total,
+    status: 'pending',
+    source: source,
+    created_by: payload.created_by || '',
+    created_at: new Date().toISOString()
+  };
+
+  if(sb){
+    const {error} = await sb.from('orders').insert(order);
+    if(error){ console.error(error); }
+  } else {
+    queue.unshift(order);
+  }
+
+  updateQueueBadge();
+  if(queueOpen) renderQueue();
+}
+
+// ===== MONTHLY SUMMARY + EXPORT =====
+let monthlyRows=[]; // for export
+
+function monthRange(year, month){
+  // month 1-12
+  const start = new Date(Date.UTC(year, month-1, 1, 0,0,0));
+  const end = new Date(Date.UTC(year, month, 1, 0,0,0));
+  return {start: start.toISOString(), end: end.toISOString()};
+}
+
+async function loadMonthlySummary(){
+  const m=Number(document.getElementById('reportMonth')?.value || (new Date().getMonth()+1));
+  const y=Number(document.getElementById('reportYear')?.value || (new Date().getFullYear()));
+  const {start, end} = monthRange(y,m);
+
+  let tx=[];
+  if(sb){
+    const {data, error} = await sb
+      .from('transactions')
+      .select('*')
+      .gte('created_at', start)
+      .lt('created_at', end);
+
+    if(!error && Array.isArray(data)) tx=data;
+  } else {
+    tx=[]; // demo mode
+  }
+
+  // aggregate per product
+  const agg={};
+  PRODUCTS.forEach(p=>agg[p.id]={name:p.name, in:0, out:0});
+  for(const t of tx){
+    const pid=t.product_id;
+    if(!agg[pid]) agg[pid]={name: productName(pid), in:0, out:0};
+    if(t.type==='in') agg[pid].in += Number(t.qty||0);
+    if(t.type==='out') agg[pid].out += Number(t.qty||0);
+  }
+
+  monthlyRows = Object.values(agg).map(r=>({
+    perisa: r.name,
+    stok_masuk: r.in,
+    jualan: r.out,
+    net: r.in - r.out
+  }));
+
+  // render table
+  const tbody=document.getElementById('monthlyTable');
+  tbody.innerHTML='';
+  monthlyRows.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.className='border-b';
+    tr.innerHTML = `
+      <td class="py-2 pr-4 font-medium text-gray-800">${r.perisa}</td>
+      <td class="py-2 pr-4">${r.stok_masuk}</td>
+      <td class="py-2 pr-4">${r.jualan}</td>
+      <td class="py-2 pr-4 font-semibold">${r.net}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const meta=document.getElementById('monthlyMeta');
+  if(meta) meta.textContent = `Bulan ${m}/${y} • Rekod transaksi: ${tx.length}`;
+}
+
+function exportMonthlyExcel(){
+  if(!monthlyRows || monthlyRows.length===0){ alert('Tiada data'); return; }
+
+  const ws = XLSX.utils.json_to_sheet(monthlyRows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Rumusan Bulanan");
+
+  const m=document.getElementById('reportMonth').value;
+  const y=document.getElementById('reportYear').value;
+  XLSX.writeFile(wb, `Rumusan_${m}-${y}.xlsx`);
+}
+
+function exportMonthlyPDF(){
+  if(!monthlyRows || monthlyRows.length===0){ alert('Tiada data'); return; }
+
+  const m=document.getElementById('reportMonth').value;
+  const y=document.getElementById('reportYear').value;
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'p', unit:'pt', format:'a4'});
+  doc.setFontSize(14);
+  doc.text(`Rumusan Bulanan (Jualan & Stok Masuk) - ${m}/${y}`, 40, 50);
+
+  const body = monthlyRows.map(r=>[r.perisa, String(r.stok_masuk), String(r.jualan), String(r.net)]);
+  doc.autoTable({
+    head: [['Perisa','Stok Masuk','Jualan','Net']],
+    body,
+    startY: 70,
+    styles: {fontSize: 10}
+  });
+
+  doc.save(`Rumusan_${m}-${y}.pdf`);
+}
+
+// ===== INIT =====
+function boot(){
+  // init empty stock then load from DB
+  PRODUCTS.forEach(p=>stock[p.id]=0);
+
+  // admin panel hidden until login admin
+  document.getElementById('adminStockIn').classList.add('hidden');
+
+  // builder
+  addRow();
+
+  // first load (even before login)
+  initRealtimeAndLoad();
+
+  // close queue if click outside panel
+  document.addEventListener('click', (e)=>{
+    const panel=document.getElementById('queuePanel');
+    const btn=e.target.closest('button');
+    const isQueueBtn = btn && btn.textContent && btn.textContent.includes('Daftar Jualan');
+    if(!queueOpen) return;
+    if(panel.contains(e.target) || isQueueBtn) return;
+    queueOpen=false;
+    panel.classList.add('hidden');
+  });
+}
+boot();
+</script>
+
+</body>
+</html>
