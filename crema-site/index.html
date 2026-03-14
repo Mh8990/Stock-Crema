@@ -67,8 +67,12 @@
       -webkit-overflow-scrolling: touch;
     }
 
-    /* ===== Perisa Card alignment ===== */
-    .flavour-card { display: flex; flex-direction: column; height: 100%; }
+    /* ===== Perisa Card alignment (fix tombol selari) ===== */
+    .flavour-card {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
     .flavour-media {
       aspect-ratio: 4 / 5;
       background: #fff;
@@ -83,31 +87,36 @@
       object-position: center;
       display: block;
     }
+
+    /* Clamp tajuk & desc supaya tinggi sama untuk semua card */
     .flavour-title {
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 2;   /* tajuk max 2 baris */
       overflow: hidden;
-      min-height: 44px;
+      min-height: 44px;        /* 2 baris */
     }
     .flavour-desc {
       display: -webkit-box;
       -webkit-box-orient: vertical;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 2;   /* desc max 2 baris */
       overflow: hidden;
-      min-height: 40px;
+      min-height: 40px;        /* 2 baris */
     }
+
+    /* bottom section stay at bottom always */
     .flavour-bottom { margin-top: auto; }
 
-    /* ===== Stepper with input number ===== */
+    /* ===== Stepper with input number (kemas + jelas ada +) ===== */
     .qty-box {
       border: 1px solid rgba(0,0,0,.12);
       border-radius: 16px;
       padding: 10px;
       background: #fff;
     }
+    /* Bagi semua card bawah sama tinggi (supaya button align) */
     .qty-box-fixed {
-      min-height: 128px;
+      min-height: 128px; /* boleh ubah kalau nak lebih padat */
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -160,24 +169,14 @@
       padding: 0 10px;
       background: #fff;
     }
-    input[type=number]::-webkit-outer-spin-button,
-    input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-    input[type=number] { -moz-appearance: textfield; }
 
-    /* ===== Troli: sold out row ===== */
-    .cart-row-soldout { opacity: .55; filter: grayscale(.12); }
-    .cart-soldout-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-      font-weight: 900;
-      padding: 3px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,.12);
-      background: rgba(0,0,0,.03);
-      margin-left: 8px;
+    /* hide native spinners */
+    input[type=number]::-webkit-outer-spin-button,
+    input[type=number]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
     }
+    input[type=number] { -moz-appearance: textfield; }
   </style>
 </head>
 
@@ -196,6 +195,7 @@
 
       <nav class="hidden md:flex items-center gap-6 text-sm">
         <a href="#perisa" class="hover:opacity-70">Perisa</a>
+        <a href="#kuihRaya" class="hover:opacity-70">Kuih Raya</a>
         <a href="#harga" class="hover:opacity-70">Harga</a>
         <a href="#tempahan" class="hover:opacity-70">Tempahan</a>
         <a href="#testimoni" class="hover:opacity-70">Testimoni</a>
@@ -206,17 +206,20 @@
           WhatsApp
         </a>
 
+        <!-- Butang Troli Desktop -->
         <button id="cartBtn" class="relative rounded-2xl px-4 py-2 font-semibold hover:shadow flex items-center gap-2 bg-amber-400 border border-amber-500">
           <i class="fa-solid fa-cart-shopping"></i>
           <span>Troli</span>
           <span id="cartCount" class="ml-1 inline-flex items-center justify-center rounded-full text-xs px-2 py-0.5 bg-gray-900 text-white">0</span>
         </button>
 
+        <!-- Admin (small) -->
         <button id="adminOpenBtn" class="rounded-2xl px-3 py-2 border text-xs font-semibold hover:shadow">
           Admin
         </button>
       </nav>
 
+      <!-- Right side mobile: cart + menu -->
       <div class="flex md:hidden items-center gap-2">
         <button id="cartBtnMobile" class="relative rounded-xl px-3 py-2 flex items-center gap-2 bg-amber-400 border border-amber-500">
           <i class="fa-solid fa-cart-shopping"></i>
@@ -229,6 +232,7 @@
     <div id="menuPanel" class="hidden md:hidden border-t bg-white">
       <div class="px-4 py-3 grid gap-2">
         <a href="#perisa" class="py-2 menu-link">Perisa</a>
+        <a href="#kuihRaya" class="py-2 menu-link">Kuih Raya</a>
         <a href="#harga" class="py-2 menu-link">Harga</a>
         <a href="#tempahan" class="py-2 menu-link">Tempahan</a>
         <a href="#testimoni" class="py-2 menu-link">Testimoni</a>
@@ -292,7 +296,7 @@
     <section id="perisa" class="mx-auto max-w-6xl px-4 py-20">
       <div class="mx-auto max-w-3xl text-center mb-10">
         <p class="text-sm uppercase tracking-widest opacity-70">Pilihan</p>
-        <h2 class="mt-1 text-3xl md:text-4xl font-extrabold">Perisa Popular (18 Jenis)</h2>
+        <h2 class="mt-1 text-3xl md:text-4xl font-extrabold">Perisa Popular (15 Jenis)</h2>
         <p class="mt-3 text-base opacity-80">
           Harga setiap jenis: <strong>RM1.00 sebatang</strong>. Boleh campur perisa dalam satu order.
         </p>
@@ -301,8 +305,11 @@
         </p>
       </div>
 
-      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6" id="flavourGrid"></div>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-6" id="flavourGrid">
+        <!-- Cards generated by JS -->
+      </div>
 
+      <!-- Button Semak Pesanan Anda (selepas perisa) -->
       <div class="mt-10 flex justify-center">
         <button id="reviewOrderBtn"
           class="rounded-2xl px-6 py-3 border font-extrabold hover:shadow flex items-center gap-3 transition"
@@ -315,6 +322,24 @@
         </button>
       </div>
       <p class="mt-3 text-center text-xs opacity-70">Flow: Pilih perisa → klik Semak Pesanan → semak & hantar</p>
+    </section>
+
+    <!-- KUIH RAYA & KUDAP-KUDAP -->
+    <section id="kuihRaya" class="mx-auto max-w-6xl px-4 py-20">
+      <div class="mx-auto max-w-3xl text-center mb-10">
+        <p class="text-sm uppercase tracking-widest opacity-70">Baru Ditambah</p>
+        <h2 class="mt-1 text-3xl md:text-4xl font-extrabold">Kuih Raya & Kudap-kudap</h2>
+        <p class="mt-3 text-base opacity-80">
+          Pilihan kudapan rangup dan premium sesuai untuk hari raya, doorgift, jamuan pejabat dan minum petang.
+        </p>
+        <p class="mt-1 text-xs opacity-70">
+          Tetapkan kuantiti dan klik <strong>Tambah ke Troli</strong>. Harga dijual mengikut unit / balang.
+        </p>
+      </div>
+
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6" id="snackGrid">
+        <!-- Snack cards generated by JS -->
+      </div>
     </section>
 
     <!-- HARGA (pakej) -->
@@ -420,7 +445,7 @@
       <div class="mx-auto max-w-5xl px-4 py-16 text-center">
         <h2 class="text-3xl md:text-4xl font-extrabold">Sedia Buat Tempahan?</h2>
         <p class="mt-2 opacity-80">
-          Tambah perisa atau pakej ke troli, semak pesanan, dan klik Hantar Pesanan untuk hantar melalui WhatsApp.
+          Tambah aiskrim, kuih raya atau pakej ke troli, semak pesanan, dan klik Hantar Pesanan untuk hantar melalui WhatsApp.
         </p>
         <div class="mt-6 flex flex-wrap gap-3 justify-center">
           <button id="cartBtnCTA" class="rounded-2xl px-6 py-3 font-semibold hover:shadow flex items-center gap-2 bg-amber-400 border border-amber-500">
@@ -544,8 +569,10 @@
 
   <!-- MODAL TROLI -->
   <div id="cartModal" class="fixed inset-0 z-[60] modal-hidden" aria-hidden="true">
+    <!-- backdrop -->
     <div id="cartBackdrop" class="absolute inset-0 bg-black/40"></div>
 
+    <!-- panel -->
     <div class="relative max-w-3xl mx-auto mt-6 md:mt-16 px-3">
       <div id="cartPanel" class="bg-white rounded-3xl shadow-xl border overflow-hidden cart-panel modal-shell" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
         <div class="flex items-center justify-between px-6 py-4 border-b">
@@ -566,7 +593,7 @@
 
         <div class="modal-body-scroll">
           <div id="cartEmptyState" class="px-6 py-6 text-center text-sm opacity-70">
-            Troli masih kosong. Tambah perisa atau pakej dari menu <strong>Perisa Popular</strong> atau <strong>Harga</strong>.
+            Troli masih kosong. Tambah item dari menu <strong>Perisa Popular</strong>, <strong>Kuih Raya</strong> atau <strong>Harga</strong>.
           </div>
 
           <div class="px-6 py-4">
@@ -583,6 +610,7 @@
             </table>
           </div>
 
+          <!-- Form -->
           <div class="px-6 pb-6">
             <div class="rounded-2xl border p-4">
               <h4 class="font-extrabold text-sm mb-3 flex items-center gap-2">
@@ -631,9 +659,9 @@
 
         <div class="border-t px-6 py-4 flex flex-col gap-2 md:flex-row md:items-center md:justify-between bg-gray-50">
           <div class="text-sm">
-            <div>Jumlah batang: <span id="cartTotalQty" class="font-semibold">0</span></div>
+            <div>Jumlah item dalam troli: <span id="cartTotalQty" class="font-semibold">0</span></div>
             <div>Jumlah harga: <span id="cartTotalPrice" class="font-semibold">RM0.00</span></div>
-            <div class="text-xs opacity-70 mt-1">Harga tetap RM1.00 sebatang.</div>
+            <div class="text-xs opacity-70 mt-1">Aiskrim dikira RM1.00 sebatang, kuih raya dikira ikut harga unit / balang.</div>
           </div>
 
           <div class="flex flex-col sm:flex-row gap-2 mt-2 md:mt-0">
@@ -718,16 +746,53 @@
     // =========================
     // CONFIG
     // =========================
-    const PHONE = '60148315668';
+    const PHONE = '60148315668'; // WhatsApp number (tanpa +)
     const PRICE_PER_STICK = 1.0;
 
+    // Harga kuih raya / kudap-kudap (boleh ubah ikut harga sebenar)
+    const SNACK_ITEMS = [
+      {
+        name: 'Biskut Florentine Mix Seed',
+        img: 'floretine.png',
+        desc: 'Rangup premium dengan campuran biji bunga matahari, pumpkin seed dan salutan karamel nipis.',
+        price: 30.00,
+        unitLabel: 'balang'
+      },
+      {
+        name: 'Tart Nanas Gulung',
+        img: '185BAC96-9E1F-48B7-9E93-F1B9DEBCD244.jpeg',
+        desc: 'Inti nanas padat dengan pastry lembut, sesuai untuk hidangan raya dan doorgift.',
+        price: 30.00,
+        unitLabel: 'balang'
+      },
+      {
+        name: 'Biskut Coklat Premium',
+        img: '2C622102-CDE5-4BB4-ADC8-29A7F1CB3D4D.jpeg',
+        desc: 'Biskut coklat premium bersalut coklat dan taburan sprinkle untuk peminat manisan.',
+        price: 30.00,
+        unitLabel: 'balang'
+      },
+      {
+        name: 'Popia Mini Sambal',
+        img: 'front-page.jpg',
+        desc: 'Kudapan pedas manis yang rangup dan sesuai dimakan pada bila-bila masa.',
+        price: 30.00,
+        unitLabel: 'balang'
+      }
+    ];
+
+    // Netlify Functions endpoints (relative)
     const AVAIL_API = "/.netlify/functions/get-availability";
     const ADMIN_LOGIN_API = "/.netlify/functions/admin-login";
     const ADMIN_SAVE_API = "/.netlify/functions/admin-update-availability";
 
+    // auto refresh availability setiap 30s (public)
     const AVAIL_REFRESH_MS = 30000;
+
+    // Auto buka troli bila tambah item
     const AUTO_OPEN_CART_MODE = "always";
 
+    // Quantity limits
     const QTY_MIN = 1;
     const QTY_MAX = 999;
 
@@ -754,17 +819,19 @@
       { name: 'Keladi Cheese', img: 'keladi-cheese.png', desc: 'Gabungan keladi dan cheese gaya moden.' },
       { name: 'Tutti Fruiti', img: 'tutti.png', desc: 'Keenakan campuran buah-buahan.' },
       { name: 'Blueberry', img: 'blueberry.png', desc: 'Rasa beri yang manis dan menyegarkan.' },
-      { name: 'Oreo', img: 'oreo.png', desc: 'Biskut rangup dalam krim.' },
-      { name: 'Durian', img: 'durian.png', desc: 'Raja buah — wangi, lemak dan padu.' },
-      { name: 'Durian Cheese', img: 'durian-cheese.png', desc: 'Gabungan durian dan cheese yang creamy.' },
-      { name: 'Strawberi Jelly', img: 'strawberi.png', desc: 'Masam manis strawberi, segar dan berkrim.' }
+      { name: 'Oreo', img: 'oreo.png', desc: 'Biskut rangup dalam krim.' }
     ];
 
-    let availability = {};
+    // availability: { [flavourName]: true/false } true=available, false=sold out
+    let availability = {}; // will load from remote
     let isAdminEditing = false;
 
+    // cart: { [name]: { units, sticksPerUnit, pricePerUnit, unitLabel, type } }
     const cart = {};
-    const selectionQty = {};
+
+    // perisa selector qty (before add)
+    const selectionQty = {}; // { [flavourName]: number }
+    const snackSelectionQty = {}; // { [snackName]: number }
 
     // =========================
     // Helpers
@@ -772,54 +839,65 @@
     function safeJsonParse(str, fallback) {
       try { return JSON.parse(str); } catch { return fallback; }
     }
+
     function clampInt(v, min, max) {
       const n = parseInt(v, 10);
       if (Number.isNaN(n)) return min;
       return Math.max(min, Math.min(max, n));
     }
-    function cssEscape(str) { return String(str).replace(/"/g, '&quot;'); }
 
-    function isSoldOut(name) {
-      return availability[name] === false;
+    function getAdminToken() {
+      return sessionStorage.getItem("cremaAdminToken") || "";
     }
-
-    function getAdminToken() { return sessionStorage.getItem("cremaAdminToken") || ""; }
-    function setAdminToken(token) { sessionStorage.setItem("cremaAdminToken", token); }
+    function setAdminToken(token) {
+      sessionStorage.setItem("cremaAdminToken", token);
+    }
 
     function initCartBase() {
       FLAVOURS.forEach(f => {
-        if (!cart[f.name]) cart[f.name] = { units: 0, sticksPerUnit: 1 };
+        if (!cart[f.name]) cart[f.name] = { units: 0, sticksPerUnit: 1, pricePerUnit: PRICE_PER_STICK, unitLabel: 'batang', type: 'icecream' };
         if (selectionQty[f.name] == null) selectionQty[f.name] = 1;
+      });
+
+      SNACK_ITEMS.forEach(item => {
+        if (!cart[item.name]) cart[item.name] = { units: 0, sticksPerUnit: 0, pricePerUnit: item.price, unitLabel: item.unitLabel || 'balang', type: 'snack' };
+        if (snackSelectionQty[item.name] == null) snackSelectionQty[item.name] = 1;
       });
     }
 
     function setQtyUI(name, nextVal) {
       const v = clampInt(nextVal, QTY_MIN, QTY_MAX);
       selectionQty[name] = v;
+
       const inputEl = document.querySelector(`[data-sel-input="${cssEscape(name)}"]`);
       if (inputEl && inputEl.value !== String(v)) inputEl.value = String(v);
     }
 
     function getCartSummary() {
       const items = Object.values(cart);
-      const totalSticks = items.reduce((sum, item) => sum + item.units * item.sticksPerUnit, 0);
-      const totalPrice = totalSticks * PRICE_PER_STICK;
-      return { totalSticks, totalPrice };
+      const totalSticks = items.reduce((sum, item) => sum + item.units * (item.type === 'icecream' ? item.sticksPerUnit : 0), 0);
+      const totalUnits = items.reduce((sum, item) => sum + item.units, 0);
+      const totalPrice = items.reduce((sum, item) => {
+        if (item.type === 'icecream') return sum + (item.units * item.sticksPerUnit * PRICE_PER_STICK);
+        return sum + (item.units * (item.pricePerUnit || 0));
+      }, 0);
+      return { totalSticks, totalUnits, totalPrice };
     }
 
     function updateCountsUI() {
-      const { totalSticks, totalPrice } = getCartSummary();
+      const { totalSticks, totalUnits, totalPrice } = getCartSummary();
+
       const cartCount = document.getElementById('cartCount');
       const cartCountMobile = document.getElementById('cartCountMobile');
-      if (cartCount) cartCount.textContent = totalSticks;
-      if (cartCountMobile) cartCountMobile.textContent = totalSticks;
+      if (cartCount) cartCount.textContent = totalUnits;
+      if (cartCountMobile) cartCountMobile.textContent = totalUnits;
 
       const reviewCount = document.getElementById('reviewOrderCount');
-      if (reviewCount) reviewCount.textContent = totalSticks;
+      if (reviewCount) reviewCount.textContent = totalUnits;
 
       const reviewBtn = document.getElementById('reviewOrderBtn');
       if (reviewBtn) {
-        if (totalSticks > 0) {
+        if (totalUnits > 0) {
           reviewBtn.classList.add("bg-amber-400", "border-amber-500");
           reviewBtn.classList.remove("border");
         } else {
@@ -835,7 +913,7 @@
 
       const emptyState = document.getElementById('cartEmptyState');
       if (emptyState) {
-        if (totalSticks === 0) emptyState.classList.remove('hidden');
+        if (totalUnits === 0) emptyState.classList.remove('hidden');
         else emptyState.classList.add('hidden');
       }
     }
@@ -883,6 +961,7 @@
         if (isAvail) {
           card.classList.remove("card-dim");
           if (badge) badge.classList.add("hidden");
+
           [addBtn, minusBtn, plusBtn, inputEl].forEach(el => {
             if (!el) return;
             el.disabled = false;
@@ -891,6 +970,7 @@
         } else {
           card.classList.add("card-dim");
           if (badge) badge.classList.remove("hidden");
+
           [addBtn, minusBtn, plusBtn, inputEl].forEach(el => {
             if (!el) return;
             el.disabled = true;
@@ -898,13 +978,22 @@
           });
         }
       });
+    }
 
-      // IMPORTANT: update troli juga bila status berubah
-      renderCartItems();
+    function cssEscape(str) {
+      return String(str).replace(/"/g, '&quot;');
+    }
+
+    function setSnackQtyUI(name, nextVal) {
+      const v = clampInt(nextVal, QTY_MIN, QTY_MAX);
+      snackSelectionQty[name] = v;
+
+      const inputEl = document.querySelector(`[data-snack-input="${cssEscape(name)}"]`);
+      if (inputEl && inputEl.value !== String(v)) inputEl.value = String(v);
     }
 
     // =========================
-    // Render Flavours
+    // Render Flavours (SELARI + STEPPER + INPUT NUMBER)
     // =========================
     function renderFlavourCards() {
       const grid = document.getElementById("flavourGrid");
@@ -994,7 +1083,7 @@
 
         const minusName = t.getAttribute("data-sel-minus");
         if (minusName) {
-          if (isSoldOut(minusName)) return;
+          if (availability[minusName] === false) return;
           const cur = clampInt(selectionQty[minusName] ?? 1, QTY_MIN, QTY_MAX);
           setQtyUI(minusName, cur - 1);
           return;
@@ -1002,7 +1091,7 @@
 
         const plusName = t.getAttribute("data-sel-plus");
         if (plusName) {
-          if (isSoldOut(plusName)) return;
+          if (availability[plusName] === false) return;
           const cur = clampInt(selectionQty[plusName] ?? 1, QTY_MIN, QTY_MAX);
           setQtyUI(plusName, cur + 1);
           return;
@@ -1010,12 +1099,123 @@
 
         const addName = t.getAttribute("data-add-flavour");
         if (addName) {
-          if (isSoldOut(addName)) return;
+          if (availability[addName] === false) return;
 
           const qty = clampInt(selectionQty[addName] ?? 1, QTY_MIN, QTY_MAX);
-          addToCart(addName, 1, qty);
+          addToCart(addName, 1, qty, PRICE_PER_STICK, 'batang', 'icecream');
 
+          // reset selection
           setQtyUI(addName, 1);
+
+          if (AUTO_OPEN_CART_MODE === "always") {
+            openCart({ focusSend: true });
+          }
+        }
+      });
+
+      // input typing
+      grid.addEventListener("input", (e) => {
+        const t = e.target;
+        if (!t || !t.getAttribute) return;
+
+        const name = t.getAttribute("data-sel-input");
+        if (!name) return;
+        if (availability[name] === false) return;
+
+        if (t.value === "") return; // allow empty while typing
+        setQtyUI(name, t.value);
+      });
+
+      // on blur, normalize to min
+      grid.addEventListener("blur", (e) => {
+        const t = e.target;
+        if (!t || !t.getAttribute) return;
+
+        const name = t.getAttribute("data-sel-input");
+        if (!name) return;
+        if (availability[name] === false) return;
+
+        if (t.value === "") setQtyUI(name, QTY_MIN);
+        else setQtyUI(name, t.value);
+      }, true);
+    }
+
+    function renderSnackCards() {
+      const grid = document.getElementById("snackGrid");
+      if (!grid) return;
+      grid.innerHTML = "";
+
+      SNACK_ITEMS.forEach(item => {
+        const qty = clampInt(snackSelectionQty[item.name] ?? 1, QTY_MIN, QTY_MAX);
+        const card = document.createElement("div");
+        card.className = "relative rounded-3xl border overflow-hidden hover:shadow-md transition bg-white flavour-card";
+        card.setAttribute("data-snack-card", item.name);
+
+        card.innerHTML = `
+          <div class="flavour-media border-b">
+            <img src="${item.img}" alt="${item.name}" loading="lazy"/>
+          </div>
+
+          <div class="p-4 flex flex-col flex-1">
+            <div class="flex items-start justify-between gap-2">
+              <h3 class="font-bold text-lg leading-snug flavour-title">${item.name}</h3>
+              <span class="shrink-0 inline-flex items-center rounded-full border px-2 py-1 text-xs font-medium bg-amber-50">Kuih Raya</span>
+            </div>
+
+            <p class="mt-1 text-sm font-semibold text-rose-700">RM${item.price.toFixed(2)} / ${item.unitLabel}</p>
+            <p class="mt-1 text-sm opacity-80 flavour-desc">${item.desc}</p>
+
+            <div class="flavour-bottom mt-3 qty-box qty-box-fixed">
+              <div class="qty-row">
+                <span class="qty-label">Kuantiti</span>
+
+                <div class="qty-stepper">
+                  <button type="button" data-snack-minus="${item.name}" aria-label="Kurangkan kuantiti ${item.name}">-</button>
+                  <input class="qty-input" type="number" inputmode="numeric" min="${QTY_MIN}" max="${QTY_MAX}" step="1" value="${qty}" data-snack-input="${item.name}" aria-label="Masukkan kuantiti ${item.name}" />
+                  <button type="button" data-snack-plus="${item.name}" aria-label="Tambah kuantiti ${item.name}">+</button>
+                </div>
+              </div>
+
+              <button type="button" class="mt-auto w-full rounded-2xl px-4 py-2 text-sm font-extrabold bg-rose-600 text-white hover:bg-rose-700" data-add-snack="${item.name}">
+                Tambah ke Troli
+              </button>
+            </div>
+          </div>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    function bindSnackCardEvents() {
+      const grid = document.getElementById("snackGrid");
+      if (!grid) return;
+
+      grid.addEventListener("click", (e) => {
+        const t = e.target;
+        if (!t || !t.getAttribute) return;
+
+        const minusName = t.getAttribute("data-snack-minus");
+        if (minusName) {
+          const cur = clampInt(snackSelectionQty[minusName] ?? 1, QTY_MIN, QTY_MAX);
+          setSnackQtyUI(minusName, cur - 1);
+          return;
+        }
+
+        const plusName = t.getAttribute("data-snack-plus");
+        if (plusName) {
+          const cur = clampInt(snackSelectionQty[plusName] ?? 1, QTY_MIN, QTY_MAX);
+          setSnackQtyUI(plusName, cur + 1);
+          return;
+        }
+
+        const addName = t.getAttribute("data-add-snack");
+        if (addName) {
+          const item = SNACK_ITEMS.find(s => s.name === addName);
+          const qty = clampInt(snackSelectionQty[addName] ?? 1, QTY_MIN, QTY_MAX);
+          if (!item) return;
+          addToCart(addName, 0, qty, item.price, item.unitLabel, 'snack');
+          setSnackQtyUI(addName, 1);
 
           if (AUTO_OPEN_CART_MODE === "always") {
             openCart({ focusSend: true });
@@ -1026,39 +1226,32 @@
       grid.addEventListener("input", (e) => {
         const t = e.target;
         if (!t || !t.getAttribute) return;
-
-        const name = t.getAttribute("data-sel-input");
+        const name = t.getAttribute("data-snack-input");
         if (!name) return;
-        if (isSoldOut(name)) return;
-
         if (t.value === "") return;
-        setQtyUI(name, t.value);
+        setSnackQtyUI(name, t.value);
       });
 
       grid.addEventListener("blur", (e) => {
         const t = e.target;
         if (!t || !t.getAttribute) return;
-
-        const name = t.getAttribute("data-sel-input");
+        const name = t.getAttribute("data-snack-input");
         if (!name) return;
-        if (isSoldOut(name)) return;
-
-        if (t.value === "") setQtyUI(name, QTY_MIN);
-        else setQtyUI(name, t.value);
+        if (t.value === "") setSnackQtyUI(name, QTY_MIN);
+        else setSnackQtyUI(name, t.value);
       }, true);
     }
 
     // =========================
     // Cart Logic
     // =========================
-    function addToCart(name, sticksPerUnit = 1, unitsToAdd = 1) {
+    function addToCart(name, sticksPerUnit = 1, unitsToAdd = 1, pricePerUnit = PRICE_PER_STICK, unitLabel = 'batang', type = 'icecream') {
       if (!name) return;
-
-      // prevent add sold out
-      if (FLAVOURS.some(f => f.name === name) && isSoldOut(name)) return;
-
-      if (!cart[name]) cart[name] = { units: 0, sticksPerUnit };
+      if (!cart[name]) cart[name] = { units: 0, sticksPerUnit, pricePerUnit, unitLabel, type };
       cart[name].sticksPerUnit = sticksPerUnit;
+      cart[name].pricePerUnit = pricePerUnit;
+      cart[name].unitLabel = unitLabel;
+      cart[name].type = type;
       cart[name].units += Math.max(1, parseInt(unitsToAdd, 10) || 1);
       renderCartItems();
       updateCountsUI();
@@ -1067,8 +1260,8 @@
     function clearCart() {
       Object.keys(cart).forEach(key => { cart[key].units = 0; });
       Object.keys(cart).forEach(key => {
-        const isFlavour = FLAVOURS.some(f => f.name === key);
-        if (!isFlavour) delete cart[key];
+        const isBaseItem = FLAVOURS.some(f => f.name === key) || SNACK_ITEMS.some(item => item.name === key);
+        if (!isBaseItem) delete cart[key];
       });
       renderCartItems();
       updateCountsUI();
@@ -1080,41 +1273,40 @@
       tbody.innerHTML = '';
 
       const flavourNames = FLAVOURS.map(f => f.name);
+      const snackNames = SNACK_ITEMS.map(item => item.name);
 
-      const renderRow = (name, item, isFlavour) => {
-        const totalSticks = item.units * item.sticksPerUnit;
-        const totalPrice = totalSticks * PRICE_PER_STICK;
+      const renderRow = (name, item, isBaseItem) => {
+        const isIcecream = item.type !== 'snack';
+        const totalSticks = isIcecream ? item.units * item.sticksPerUnit : 0;
+        const totalPrice = isIcecream
+          ? totalSticks * PRICE_PER_STICK
+          : item.units * (item.pricePerUnit || 0);
 
-        const removeHtml = isFlavour
+        const removeHtml = isBaseItem
           ? ''
           : `<button class="text-xs text-red-600 remove-item-btn" data-name="${name}">Buang</button>`;
 
-        const infoLine = item.units > 0
-          ? `${item.units}x unit ≈ ${totalSticks} batang @ RM1.00`
-          : `0 unit (0 batang)`;
+        const infoLine = isIcecream
+          ? (item.units > 0 ? `${item.units}x unit ≈ ${totalSticks} batang @ RM1.00` : `0 unit (0 batang)`)
+          : (item.units > 0 ? `${item.units}x ${item.unitLabel || 'balang'} @ RM${(item.pricePerUnit || 0).toFixed(2)}` : `0 ${item.unitLabel || 'balang'}`);
 
-        const totalLine = totalSticks > 0 ? `RM${totalPrice.toFixed(2)}` : `RM0.00`;
-        const priceDetail = totalSticks > 0 ? `RM1.00 × ${totalSticks} batang` : `Tiada batang dipesan`;
-
-        const isThisSoldOut = isFlavour && isSoldOut(name);
-        const soldPill = isThisSoldOut
-          ? `<span class="cart-soldout-pill"><i class="fa-solid fa-ban"></i> SOLD OUT</span>`
-          : '';
+        const totalLine = totalPrice > 0 ? `RM${totalPrice.toFixed(2)}` : `RM0.00`;
+        const priceDetail = isIcecream
+          ? (totalSticks > 0 ? `RM1.00 × ${totalSticks} batang` : `Tiada batang dipesan`)
+          : (item.units > 0 ? `RM${(item.pricePerUnit || 0).toFixed(2)} × ${item.units} ${item.unitLabel || 'balang'}` : `Tiada ${item.unitLabel || 'balang'} dipilih`);
 
         const row = document.createElement('tr');
-        row.className = `border-b last:border-0 ${isThisSoldOut ? 'cart-row-soldout' : ''}`;
-
+        row.className = 'border-b last:border-0';
         row.innerHTML = `
           <td class="py-2 pr-2 align-top">
             <span class="font-semibold">${name}</span>
-            ${soldPill}
             <div class="text-xs opacity-70 mt-1">${infoLine}</div>
           </td>
           <td class="py-2 px-2 text-center align-top">
-            <div class="inline-flex items-center gap-1 border rounded-full px-2 py-1 ${isThisSoldOut ? 'opacity-60' : ''}">
-              <button class="px-2 text-sm qty-btn" data-name="${name}" data-action="minus" aria-label="Kurang ${name}" ${isThisSoldOut ? 'disabled' : ''}>-</button>
+            <div class="inline-flex items-center gap-1 border rounded-full px-2 py-1">
+              <button class="px-2 text-sm qty-btn" data-name="${name}" data-action="minus" aria-label="Kurang ${name}">-</button>
               <span class="px-2 text-sm">${item.units}</span>
-              <button class="px-2 text-sm qty-btn" data-name="${name}" data-action="plus" aria-label="Tambah ${name}" ${isThisSoldOut ? 'disabled' : ''}>+</button>
+              <button class="px-2 text-sm qty-btn" data-name="${name}" data-action="plus" aria-label="Tambah ${name}">+</button>
             </div>
           </td>
           <td class="py-2 pl-2 text-right align-top">
@@ -1128,16 +1320,21 @@
         tbody.appendChild(row);
       };
 
-      // flavours first
       flavourNames.forEach(name => {
-        const item = cart[name] || { units: 0, sticksPerUnit: 1 };
+        const item = cart[name] || { units: 0, sticksPerUnit: 1, pricePerUnit: PRICE_PER_STICK, unitLabel: 'batang', type: 'icecream' };
         cart[name] = item;
         renderRow(name, item, true);
       });
 
-      // packages etc
+      snackNames.forEach(name => {
+        const snackItem = SNACK_ITEMS.find(item => item.name === name);
+        const item = cart[name] || { units: 0, sticksPerUnit: 0, pricePerUnit: snackItem?.price || 0, unitLabel: snackItem?.unitLabel || 'balang', type: 'snack' };
+        cart[name] = item;
+        renderRow(name, item, true);
+      });
+
       Object.entries(cart).forEach(([name, item]) => {
-        if (flavourNames.includes(name)) return;
+        if (flavourNames.includes(name) || snackNames.includes(name)) return;
         renderRow(name, item, false);
       });
 
@@ -1148,8 +1345,9 @@
     // WhatsApp Message
     // =========================
     function buildWhatsAppOrderMessage() {
-      const { totalSticks, totalPrice } = getCartSummary();
-      if (totalSticks === 0) return msgGeneral;
+      const { totalSticks, totalUnits, totalPrice } = getCartSummary();
+
+      if (totalUnits === 0) return msgGeneral;
 
       const name = (document.getElementById("orderName")?.value || "").trim();
       const dateTime = (document.getElementById("orderDateTime")?.value || "").trim();
@@ -1167,112 +1365,33 @@
       if (notes) lines.push(`Catatan: ${notes}`);
 
       lines.push('');
-      lines.push('Perincian Pesanan (harga setiap jenis RM1.00/batang):');
+      lines.push('Perincian Pesanan:');
 
       Object.entries(cart).forEach(([itemName, item]) => {
+        if (item.units <= 0) return;
+
+        if (item.type === 'snack') {
+          const itemPrice = item.units * (item.pricePerUnit || 0);
+          lines.push(
+            `• ${itemName} — ${item.units}x ${item.unitLabel || 'balang'} (RM${(item.pricePerUnit || 0).toFixed(2)} x ${item.units} = RM${itemPrice.toFixed(2)})`
+          );
+          return;
+        }
+
         const totalItemSticks = item.units * item.sticksPerUnit;
         if (totalItemSticks <= 0) return;
         const itemPrice = totalItemSticks * PRICE_PER_STICK;
         lines.push(
-          `• ${itemName} — ${item.units}x unit ( RM1.00 x ${totalItemSticks} = RM${itemPrice.toFixed(2)})`
+          `• ${itemName} — ${item.units}x unit (± ${totalItemSticks} batang, RM1.00 x ${totalItemSticks} = RM${itemPrice.toFixed(2)})`
         );
       });
 
       lines.push('');
-      lines.push(`Jumlah batang: ${totalSticks}`);
-      lines.push(`Jumlah anggaran harga: RM${totalPrice.toFixed(2)} (RM1.00 x ${totalSticks})`);
+      lines.push(`Jumlah item: ${totalUnits}`);
+      if (totalSticks > 0) lines.push(`Jumlah batang aiskrim: ${totalSticks}`);
+      lines.push(`Jumlah anggaran harga: RM${totalPrice.toFixed(2)}`);
 
       return lines.join('\n');
-    }
-
-
-    // =========================
-    // Stock Integration (JSON + postMessage + localStorage)
-    // =========================
-    // NOTE: Stock app will read from localStorage key: 'crema_new_order'
-    // and also listen to postMessage() from CREMA tab.
-    const STOCK_APP_URL = "https://YOUR-STOCK-APP-DOMAIN-HERE"; // optional (for window.open)
-    let stockWindowRef = null;
-
-    function randomId(len = 8) {
-      const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
-      let out = "";
-      for (let i = 0; i < len; i++) out += chars[Math.floor(Math.random() * chars.length)];
-      return out;
-    }
-
-    function buildOrderPayload() {
-      const nowIso = new Date().toISOString();
-      const { totalSticks, totalPrice } = getCartSummary();
-
-      const custName = (document.getElementById("orderName")?.value || "").trim();
-      const dateTime = (document.getElementById("orderDateTime")?.value || "").trim();
-      const location = (document.getElementById("orderLocation")?.value || "").trim();
-      const notes = (document.getElementById("orderNotes")?.value || "").trim();
-      const mode = document.getElementById("modePickup")?.checked ? "Pickup" : "Delivery";
-
-      const items = [];
-      Object.entries(cart).forEach(([itemName, item]) => {
-        const sticks = item.units * item.sticksPerUnit;
-        if (sticks <= 0) return;
-        items.push({
-          name: itemName,
-          qty: sticks,              // qty in BATANG (for stock deduction)
-          units: item.units,         // UI units (for reference)
-          sticks_per_unit: item.sticksPerUnit
-        });
-      });
-
-      return {
-        order_id: "CREMA-" + Date.now() + "-" + randomId(6),
-        source: "crema-website",
-        created_at: nowIso,
-        customer: {
-          name: custName,
-          delivery_mode: mode,
-          datetime: dateTime || null,
-          location: location || null
-        },
-        notes: notes || null,
-        total_qty: totalSticks,          // total batang
-        total_price: Number(totalPrice.toFixed(2)),
-        currency: "MYR",
-        items
-      };
-    }
-
-    function emitOrderToStock(payload) {
-      try {
-        const envelope = { type: "CREMA_CHECKOUT_ORDER", payload, ts: Date.now() };
-
-        // (1) localStorage fallback (stock system will poll this)
-        localStorage.setItem("crema_new_order", JSON.stringify(envelope));
-
-        // (2) postMessage (if stock system opened by this tab, or if this tab was opened by stock system)
-        if (stockWindowRef && !stockWindowRef.closed) {
-          stockWindowRef.postMessage(envelope, "*");
-        }
-        if (window.opener && !window.opener.closed) {
-          window.opener.postMessage(envelope, "*");
-        }
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage(envelope, "*");
-        }
-
-        // optional: broadcast to other tabs (same browser) if supported
-        try {
-          const bc = new BroadcastChannel("crema_orders");
-          bc.postMessage(envelope);
-          bc.close();
-        } catch {}
-      } catch {}
-    }
-
-    function openStockSystem() {
-      try {
-        if (!STOCK_APP_URL || STOCK_APP_URL.includes("YOUR-STOCK")) return;
-        stockWindowRef = window.open(STOCK_APP_URL, "cremaStockSystem");
-      } catch {}
     }
 
     function persistName() {
@@ -1280,6 +1399,7 @@
       if (!el) return;
       localStorage.setItem("cremaOrderName", el.value || "");
     }
+
     function loadPersistedName() {
       const el = document.getElementById("orderName");
       if (!el) return;
@@ -1288,7 +1408,7 @@
     }
 
     // =========================
-    // Modal open/close + trap
+    // Modal: open/close + focus trap + ESC
     // =========================
     let lastFocusedEl = null;
 
@@ -1350,6 +1470,7 @@
       modal.setAttribute("aria-hidden", "false");
 
       requestAnimationFrame(() => panel.classList.add("show"));
+
       document.body.style.overflow = "hidden";
 
       setTimeout(() => {
@@ -1507,7 +1628,6 @@
           availability = next;
           localStorage.setItem("cremaAvailabilityFallback", JSON.stringify(next));
           renderFlavourCards();
-          renderCartItems(); // ensure troli updated
           if (msg) { msg.textContent = "Disimpan. Sold Out/Available kini GLOBAL untuk semua pelawat."; msg.className = "text-sm mt-3 text-emerald-700"; }
         } else {
           if (msg) { msg.textContent = "Gagal simpan. Cuba login semula."; msg.className = "text-sm mt-3 text-red-600"; }
@@ -1521,6 +1641,7 @@
     // DOMContentLoaded
     // =========================
     document.addEventListener('DOMContentLoaded', async () => {
+      // WhatsApp links
       const setHref = (id, text) => {
         const el = document.getElementById(id);
         if (el) el.href = wa(text);
@@ -1535,9 +1656,11 @@
       setHref('waHubungi', msgGeneral);
       setHref('waFooter', msgGeneral);
 
+      // year
       const y = document.getElementById('year');
       if (y) y.textContent = new Date().getFullYear();
 
+      // mobile menu
       const menuBtn = document.getElementById('menuBtn');
       const menuPanel = document.getElementById('menuPanel');
       if (menuBtn && menuPanel) {
@@ -1547,15 +1670,20 @@
         });
       }
 
+      // init
       initCartBase();
 
+      // load availability remote then render
       const remote = await loadAvailabilityRemote();
       availability = remote || loadAvailabilityFallback();
 
+      // ensure selection qty valid
       FLAVOURS.forEach(f => setQtyUI(f.name, selectionQty[f.name] ?? 1));
 
       renderFlavourCards();
+      renderSnackCards();
       bindFlavourCardEvents();
+      bindSnackCardEvents();
 
       // auto refresh availability
       setInterval(async () => {
@@ -1563,11 +1691,11 @@
         const r = await loadAvailabilityRemote();
         if (r) {
           availability = r;
-          renderFlavourCards();   // includes applyAvailabilityToUI()
-          renderCartItems();      // keep troli disabled if sold out
+          renderFlavourCards();
         }
       }, AVAIL_REFRESH_MS);
 
+      // Cart open buttons
       const cartBtn = document.getElementById('cartBtn');
       const cartBtnMobile = document.getElementById('cartBtnMobile');
       const cartBtnCTA = document.getElementById('cartBtnCTA');
@@ -1575,9 +1703,13 @@
       if (cartBtnMobile) cartBtnMobile.addEventListener('click', () => openCart({ focusSend: false }));
       if (cartBtnCTA) cartBtnCTA.addEventListener('click', () => openCart({ focusSend: false }));
 
+      // Semak pesanan (after perisa)
       const reviewBtn = document.getElementById("reviewOrderBtn");
-      if (reviewBtn) reviewBtn.addEventListener("click", () => openCart({ focusSend: true }));
+      if (reviewBtn) {
+        reviewBtn.addEventListener("click", () => openCart({ focusSend: true }));
+      }
 
+      // Close cart
       const cartCloseBtn = document.getElementById('cartCloseBtn');
       const cartCloseX = document.getElementById('cartCloseX');
       const cartBackdrop = document.getElementById('cartBackdrop');
@@ -1585,14 +1717,13 @@
       if (cartCloseX) cartCloseX.addEventListener('click', closeCart);
       if (cartBackdrop) cartBackdrop.addEventListener('click', closeCart);
 
-      // Cart items events (delegation) - SOLD OUT will be ignored
+      // Cart items events (delegation)
       const cartItems = document.getElementById('cartItems');
       if (cartItems) {
         cartItems.addEventListener('click', (e) => {
-          const btn = e.target.closest('button');
+          const target = e.target;
+          const btn = target.closest('button');
           if (!btn) return;
-
-          if (btn.disabled) return; // IMPORTANT: block any click
 
           if (btn.classList.contains('qty-btn')) {
             const name = btn.getAttribute('data-name');
@@ -1600,12 +1731,10 @@
             const item = cart[name];
             if (!item) return;
 
-            const isFlavour = FLAVOURS.some(f => f.name === name);
-            if (isFlavour && isSoldOut(name)) return; // double safety
-
             if (action === 'plus') item.units += 1;
             else if (action === 'minus') {
               item.units = Math.max(0, item.units - 1);
+              const isFlavour = FLAVOURS.some(f => f.name === name);
               if (item.units === 0 && !isFlavour) delete cart[name];
             }
             renderCartItems();
@@ -1622,6 +1751,7 @@
         });
       }
 
+      // Clear cart
       const cartClearBtn = document.getElementById('cartClearBtn');
       if (cartClearBtn) {
         cartClearBtn.addEventListener('click', () => {
@@ -1629,14 +1759,16 @@
         });
       }
 
+      // Persist name on input
       const orderName = document.getElementById("orderName");
       if (orderName) orderName.addEventListener("input", persistName);
       loadPersistedName();
 
+      // Send order
       const sendBtn = document.getElementById("sendOrderBtn");
       if (sendBtn) {
         sendBtn.addEventListener("click", () => {
-          const { totalSticks } = getCartSummary();
+          const { totalUnits } = getCartSummary();
 
           const nameEl = document.getElementById("orderName");
           const nameError = document.getElementById("nameError");
@@ -1649,33 +1781,29 @@
           }
           if (nameError) nameError.classList.add("hidden");
 
-          if (totalSticks === 0) {
+          if (totalUnits === 0) {
             alert("Troli masih kosong. Sila tambah item dahulu.");
             return;
           }
 
           const msg = buildWhatsAppOrderMessage();
-                    // Push to Stock System (queue) BEFORE WhatsApp
-          try {
-            const payload = buildOrderPayload();
-            emitOrderToStock(payload);
-          } catch {}
-
           window.open(wa(msg), "_blank");
         });
       }
 
+      // Packages add
       document.querySelectorAll('.add-package-to-cart').forEach(btn => {
         btn.addEventListener('click', () => {
           const name = btn.getAttribute('data-name');
           const sticks = parseInt(btn.getAttribute('data-sticks'), 10) || 0;
           if (name && sticks > 0) {
-            addToCart(name, sticks, 1);
+            addToCart(name, sticks, 1, PRICE_PER_STICK, 'batang', 'icecream');
             if (AUTO_OPEN_CART_MODE === "always") openCart({ focusSend: true });
           }
         });
       });
 
+      // Admin open buttons
       const adminBtns = [
         document.getElementById("adminOpenBtn"),
         document.getElementById("adminOpenBtnMobile"),
@@ -1683,6 +1811,7 @@
       ].filter(Boolean);
       adminBtns.forEach(b => b.addEventListener("click", openAdmin));
 
+      // Admin close
       const adminCloseBtn = document.getElementById("adminCloseBtn");
       const adminCloseX = document.getElementById("adminCloseX");
       const adminBackdrop = document.getElementById("adminBackdrop");
@@ -1690,6 +1819,7 @@
       if (adminCloseX) adminCloseX.addEventListener("click", closeAdmin);
       if (adminBackdrop) adminBackdrop.addEventListener("click", closeAdmin);
 
+      // Admin login
       const adminLoginBtn = document.getElementById("adminLoginBtn");
       if (adminLoginBtn) adminLoginBtn.addEventListener("click", adminLogin);
 
@@ -1700,6 +1830,7 @@
         });
       }
 
+      // Admin refresh
       const adminRefreshBtn = document.getElementById("adminRefreshBtn");
       if (adminRefreshBtn) {
         adminRefreshBtn.addEventListener("click", async () => {
@@ -1708,17 +1839,19 @@
             availability = r;
             renderAdminList();
             renderFlavourCards();
-            renderCartItems();
           }
         });
       }
 
+      // Admin save
       const adminSaveBtn = document.getElementById("adminSaveBtn");
       if (adminSaveBtn) adminSaveBtn.addEventListener("click", adminSaveAvailability);
 
+      // initial counts
       renderCartItems();
       updateCountsUI();
 
+      // ESC + focus trap
       document.addEventListener("keydown", (e) => {
         handleTrap(e, "cartModal", "cartPanel");
         handleTrap(e, "adminModal", "adminPanel");
